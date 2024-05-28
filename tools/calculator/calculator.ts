@@ -7,17 +7,16 @@ const paramsSchema = z.object({
         description: "the expression that will be calculate",
     }),
 });
-export async function calculatorFn ({
-                                       expression,
-                                   }: z.infer<typeof paramsSchema>) {
-    const parser = new Parser();
-    const result = parser.parse(expression).evaluate();
-    return { result }
-};
 
-export const calculator = zodFunction({
+export async function calculatorFn(params: z.infer<typeof paramsSchema>) {
+    const parser = new Parser();
+    const result = parser.parse(params.expression).evaluate();
+    return {message: result}
+}
+
+export const calculator = zodFunction<any>({
     function: calculatorFn,
     schema: paramsSchema,
     description:
-        "Get returns a book's detailed information based on the id of the book. Note that this does not accept names, and only IDs, which you can get by using search.",
+        "get the result of an math expression.",
 })

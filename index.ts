@@ -1,20 +1,23 @@
 import OpenAI from "openai";
 import {calculator, calculatorFn} from "./tools/calculator/calculator";
-import content from './promtps/mental-health.txt'
+import content from './promtps/mental-health/mental-health.txt'
 import {promptUser} from "./tools/prompt-user/prompt-user.ts";
+import type {ChatCompletionToolRunnerParams} from "openai/lib/ChatCompletionRunner";
+import type {BaseFunctionsArgs, RunnableToolFunctionWithParse, RunnableTools} from "openai/lib/RunnableFunction.mjs";
 
 const client = new OpenAI();
-console.log(prompt)
+
+const body = {
+    messages: [
+        {role: "system", content},
+        {role: "user", content: "can you help me "}],
+    model: "gpt-3.5-turbo",
+    stream: true,
+    tools: [calculator, promptUser],
+} as ChatCompletionToolRunnerParams<BaseFunctionsArgs>
 
 async function main() {
-    const runner = client.beta.chat.completions
-        .runTools({
-            tools: [calculator, promptUser],
-            model: "gpt-3.5-turbo",
-            messages: [
-                {role: "system", content},
-                {role: "user", content: "can you help me "}],
-        })
+    const runner = client.beta.chat.completions.runTools(body)
         .on("message", (message) => console.log(message))
         .on("functionCall", (functionCall) =>
             console.log("functionCall", functionCall)
@@ -22,7 +25,7 @@ async function main() {
         .on("functionCallResult", (functionCallResult) =>
             console.log("functionCallResult", functionCallResult)
         )
-        .on("content", (diff) => process.stdout.write(diff));
+        .on("content", (diff) => process.stdout.write(diff))
 
     const finalContent = await runner.finalContent();
     console.log("Final content:", finalContent);
