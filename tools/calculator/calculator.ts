@@ -10,8 +10,7 @@ const paramsSchema = z.object({
 
 export async function calculatorFn(params: z.infer<typeof paramsSchema>) {
     const parser = new Parser();
-    const result = parser.parse(params.expression).evaluate();
-    return {message: result}
+    return parser.parse(params.expression).evaluate().toString();
 }
 
 export const calculator = zodFunction<any>({
