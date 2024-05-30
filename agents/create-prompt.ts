@@ -1,6 +1,8 @@
 import OpenAI from "openai";
 import {calculator, calculatorFn} from "../tools/calculator/calculator.ts";
+import type {RunStatus} from "openai/resources/beta/threads/runs/runs";
 import type {Run} from "openai/resources/beta/threads/runs/runs";
+import type {Thread} from "openai/resources/beta/threads/threads";
 
 const openai = new OpenAI()
 export const assistantParams = {
@@ -21,77 +23,72 @@ let assistantStream = openai.beta.threads.createAndRunStream({
 let FUNCTIONS_MAP = new Map<string, { 'fn': (args: any) => any }>()
 FUNCTIONS_MAP.set(calculatorFn.name, {"fn": calculatorFn})
 
+const waitWhileIn = async (status: RunStatus[], run: Run) => {
+    if (!run) throw new Error('run not found')
+    while (status.includes(run.status)) {
+        console.log('waiting for :', status)
+        console.log('current for', run.status)
+        run = await openai.beta.threads.runs.retrieve(run.thread_id, run.id)
+    }
+    return run
+}
 
-assistantStream.on('textCreated', (text) => process.stdout.write(`\nassistant text> ${text}\n\n`))
-    .on('textDelta', (textDelta, snapshot) => process.stdout.write(`\nassistant textDelta> ${JSON.stringify(textDelta)}\n\n`)
-    )
-    .on('toolCallCreated', async (toolCall) => {
-        process.stdout.write(`\nassistant toolCall> ${JSON.stringify(toolCall)}\n\n`)
-        let runThread = assistantStream.currentRun()
-        if (!runThread) return
-        runThread = await openai.beta.threads.runs.retrieve(runThread.thread_id, runThread.id)
-        while (runThread.status in ['queued', 'in_progress']) {
-            runThread = await openai.beta.threads.runs.retrieve(runThread.thread_id, runThread.id)
-        }
-    })
+const waitUntil = async (status: RunStatus[], run: Run | undefined) => {
+    if (!run) throw new Error('run not found')
+    while (!status.includes(run.status)) {
+        await new Promise(resolve => setTimeout(resolve, 1000))
+        console.log(`waitUntil ${status} != ${run.status}`)
+        run = await openai.beta.threads.runs.retrieve(run.thread_id, run.id)
+    }
+    return run
+}
+
+assistantStream
     .on('toolCallDone', async (toolCallDone) => {
-        let runThread = assistantStream.currentRun()
-        process.stdout.write(`\nassistant toolCallDone> ${JSON.stringify(toolCallDone)} ${runThread?.status}\n\n`)
-        if (!runThread) return
-        runThread = await openai.beta.threads.runs.retrieve(runThread.thread_id, runThread.id)
-        if (runThread.status === 'requires_action') {
-            console.log('requires_action')
-            console.log("functionCalled : ", runThread?.required_action?.submit_tool_outputs.tool_calls)
-            console.log("test : ", JSON.stringify(runThread?.required_action?.submit_tool_outputs.tool_calls))
+        let run = await waitUntil(['requires_action'], assistantStream.currentRun())
+        const functionCalled = run?.required_action?.submit_tool_outputs.tool_calls
+            .filter(e => e.type === 'function')
+            .map(e => ({name: e.function.name, arguments: JSON.parse(e.function.arguments), toolId: e.id}))
 
-            const functionCalled = runThread?.required_action?.submit_tool_outputs.tool_calls
-                .filter(e => e.type === 'function')
-                .map(e => ({name: e.function.name, arguments: JSON.parse(e.function.arguments), toolId: e.id}))
-
-            if (!functionCalled) {
-                console.error('#ERROR_MISSING_FUNCTION_CALL : ', functionCalled)
-                console.error('#ERROR_MISSING_FUNCTION_CALL + : ', runThread)
-                return
-            }
-
-            const allResult: Awaited<{
-                output: string;
-                tool_call_id: string
-            }>[] = await Promise.all(functionCalled.map(async e => {
-                const functionDefinition = FUNCTIONS_MAP.get(e.name)?.fn
-                console.log('finding function : ', functionDefinition)
-                if (!functionDefinition) {
-                    return {
-                        output: `Function "${e.name}" not found. Try again.`,
-                        tool_call_id: e.toolId
-                    }
-                }
-                console.log('calling function : ', functionDefinition, ' with params : ', e.arguments)
-                const test = await functionDefinition(e.arguments)
+        if (!functionCalled) {
+            console.error('#ERROR_MISSING_FUNCTION_CALL : ', functionCalled)
+            console.error('#ERROR_MISSING_FUNCTION_CALL + : ', run)
+            return
+        }
+        const allResult: Awaited<{
+            output: string;
+            tool_call_id: string
+        }>[] = await Promise.all(functionCalled.map(async e => {
+            const functionDefinition = FUNCTIONS_MAP.get(e.name)?.fn
+            if (!functionDefinition) {
                 return {
-                    output: test,
+                    output: `Function "${e.name}" not found. Try again.`,
                     tool_call_id: e.toolId
                 }
-            }))
-            await openai.beta.threads.runs.submitToolOutputs(runThread.thread_id, runThread.id, {
-                tool_outputs: allResult
-            })
-        }
+            }
+            console.log('calling function : ', functionDefinition, ' with params : ', e.arguments)
+            const output = JSON.stringify(await functionDefinition(e.arguments))
+            return {
+                output,
+                tool_call_id: e.toolId
+            }
+        }))
+        await openai.beta.threads.runs.submitToolOutputsAndPoll(run.thread_id, run.id, {
+            tool_outputs: allResult
+        })
     })
-    .on('toolCallDelta', (toolCallDelta, snapshot) => {
-        process.stdout.write(`\nassistant toolCallDelta > ${JSON.stringify(toolCallDelta)}\n\n`)
-    }).on('error', (error) => {
-     console.error(error)
-})
-    .on('end', () => {
+    .on('event', ({event, data}) => {
+        console.log('event:', JSON.stringify(event))
+        const run = assistantStream.currentRun()
+        console.log('run status: ', run?.status)
+    })
+    .on('end', async () => {
         console.log('end')
-    })
-    .on('messageDone', (messageDone) => {
-        console.log('messageDone:', JSON.stringify(messageDone))
-    })
-    .on('messageCreated', (messageCreated) => {
-        console.log('messageCreated:', JSON.stringify(messageCreated))
-    }).on('messageDelta', (messageDelta) => {
-      console.log('messageDelta:', JSON.stringify(messageDelta))
-
+        let run = await waitUntil(['completed'], assistantStream.currentRun())
+        const messages = await openai.beta.threads.messages.list(run.thread_id)
+        const lastMessage = messages.data[0]
+        console.log('lastMessage:', lastMessage.content.map(e => {
+            if (e.type === 'text') return e.text.value
+            if (e.type === 'image_file') return e.image_file.file_id
+        }).join(' '))
     })
