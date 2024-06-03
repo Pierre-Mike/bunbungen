@@ -1,11 +1,14 @@
-# test suite name
+# Test suite name
 description: "Minimal Test Suite"
-# model providers
+
+# Prompts
 prompts:
   - file://prompt.txt
+
+# Model providers
 providers:
-  # OpenAI GPT3
   - id: openai:gpt-3.5-turbo-1106
-# Repeat test N times
+
+# Evaluation options
 evaluateOptions:
   repeat: 1
