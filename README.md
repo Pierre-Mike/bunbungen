@@ -1,6 +1,6 @@
 To get started, set your OPENAI_API_KEY environment variable.
 
-Next, edit promptfooconfig.yaml.
+Next, edit `promtps/sample-promtfoo/promptfooconfig.yaml`.
 
 Then run:
 ```
