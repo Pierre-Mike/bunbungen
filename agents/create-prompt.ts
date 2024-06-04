@@ -1,46 +1,45 @@
-
-import tools, { ToolFunction } from "../tools";
-import { calculator } from "../tools/calculator/calculator.ts";
-import { openai } from "../index.ts";
-import { waitUntil, waitWhileIn } from "../utils/utils.ts";
+import tools from "../tools";
+import {calculator} from "../tools/calculator/calculator.ts";
+import {openai} from "../index.ts";
+import {waitUntil, waitWhileIn} from "../utils/utils.ts";
 import prompts from 'prompts';
+import type {AssistantStream} from "openai/lib/AssistantStream";
+import type {Message} from "openai/resources/beta/threads/messages";
 
-import { AssistantParams, AssistantStream, Run, Message, ToolCall } from './types';
-
-export const assistantParams: AssistantParams = {
+export const assistantParams = {
     name: 'instructionMaker ',
     model: 'gpt-3.5-turbo',
     instructions: 'just calculate 9*100',
-    tools: [calculator, { type: "code_interpreter" }],
+    tools: [calculator, {type: "code_interpreter"}],
 };
 
 const assistant = await openai.beta.assistants.create(assistantParams as any);
 
 async function createAndRunAssistantStream(userMessage: string): Promise<void> {
     let assistantStream = openai.beta.threads.createAndRunStream({
-        thread: { messages: [{ 'role': 'user', content: userMessage }] },
+        thread: {messages: [{'role': 'user', content: userMessage}]},
         assistant_id: assistant.id,
         stream: true,
     });
 
     assistantStream
-        .on('toolCallDone', handleToolCallDone)
+        .on('toolCallDone', ()=>handleToolCallDone(assistantStream))
         .on('event', handleEvent)
         .on('end', async () => await handleEnd(assistantStream));
 }
 
-async function handleToolCallDone(): Promise<void> {
+async function handleToolCallDone(assistantStream: AssistantStream): Promise<void> {
     let run = await waitUntil(['requires_action'], assistantStream.currentRun());
-    const functionCalled: ToolCall[] = run?.required_action?.submit_tool_outputs.tool_calls
+    const functionCalled = run?.required_action?.submit_tool_outputs.tool_calls
         .filter(e => e.type === 'function')
-        .map(e => ({ name: e.function.name, arguments: JSON.parse(e.function.arguments), toolId: e.id }));
+        .map(e => ({name: e.function.name, arguments: JSON.parse(e.function.arguments), toolId: e.id}));
     if (!functionCalled) {
         console.error('#ERROR_MISSING_FUNCTION_CALL : ', functionCalled);
         console.error('#ERROR_MISSING_FUNCTION_CALL + : ', run);
         return;
     }
 
-    const allResult = await Promise.all(functionCalled.map(async (e: ToolCall) => {
+    const allResult = await Promise.all(functionCalled.map(async (e) => {
         const functionDefinition = tools.get(e.name);
         if (!functionDefinition) return {
             output: `Function "${e.name}" not found. Try again.`,
@@ -60,8 +59,6 @@ async function handleToolCallDone(): Promise<void> {
 
 function handleEvent({ event, data }: { event: any; data: any }): void {
     console.log('event:', JSON.stringify(event));
-    const run = assistantStream.currentRun();
-    console.log('run status: ', run?.status);
 }
 
 async function handleEnd(assistantStream: AssistantStream): Promise<void> {
