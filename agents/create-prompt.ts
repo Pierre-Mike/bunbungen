@@ -1,11 +1,13 @@
 
-import tools from "../tools";
+import tools, { ToolFunction } from "../tools";
 import { calculator } from "../tools/calculator/calculator.ts";
 import { openai } from "../index.ts";
 import { waitUntil, waitWhileIn } from "../utils/utils.ts";
 import prompts from 'prompts';
 
-export const assistantParams = {
+import { AssistantParams, AssistantStream, Run, Message, ToolCall } from './types';
+
+export const assistantParams: AssistantParams = {
     name: 'instructionMaker ',
     model: 'gpt-3.5-turbo',
     instructions: 'just calculate 9*100',
@@ -14,7 +16,7 @@ export const assistantParams = {
 
 const assistant = await openai.beta.assistants.create(assistantParams as any);
 
-async function createAndRunAssistantStream(userMessage) {
+async function createAndRunAssistantStream(userMessage: string): Promise<void> {
     let assistantStream = openai.beta.threads.createAndRunStream({
         thread: { messages: [{ 'role': 'user', content: userMessage }] },
         assistant_id: assistant.id,
@@ -27,9 +29,9 @@ async function createAndRunAssistantStream(userMessage) {
         .on('end', async () => await handleEnd(assistantStream));
 }
 
-async function handleToolCallDone() {
+async function handleToolCallDone(): Promise<void> {
     let run = await waitUntil(['requires_action'], assistantStream.currentRun());
-    const functionCalled = run?.required_action?.submit_tool_outputs.tool_calls
+    const functionCalled: ToolCall[] = run?.required_action?.submit_tool_outputs.tool_calls
         .filter(e => e.type === 'function')
         .map(e => ({ name: e.function.name, arguments: JSON.parse(e.function.arguments), toolId: e.id }));
     if (!functionCalled) {
@@ -38,7 +40,7 @@ async function handleToolCallDone() {
         return;
     }
 
-    const allResult = await Promise.all(functionCalled.map(async e => {
+    const allResult = await Promise.all(functionCalled.map(async (e: ToolCall) => {
         const functionDefinition = tools.get(e.name);
         if (!functionDefinition) return {
             output: `Function "${e.name}" not found. Try again.`,
@@ -56,24 +58,24 @@ async function handleToolCallDone() {
     });
 }
 
-function handleEvent({ event, data }) {
+function handleEvent({ event, data }: { event: any; data: any }): void {
     console.log('event:', JSON.stringify(event));
     const run = assistantStream.currentRun();
     console.log('run status: ', run?.status);
 }
 
-async function handleEnd(assistantStream) {
+async function handleEnd(assistantStream: AssistantStream): Promise<void> {
     console.log('end');
     let run = await waitWhileIn(['requires_action'], assistantStream.currentRun());
     run = await waitUntil(['completed'], run);
-    const messages = await openai.beta.threads.messages.list(run.thread_id);
+    const messages: { data: Message[] } = await openai.beta.threads.messages.list(run.thread_id);
     const lastMessage = messages.data[0];
     console.log('lastMessage:', lastMessage.content.map(e => {
         if (e.type === 'text') return e.text.value;
         if (e.type === 'image_file') return e.image_file.file_id;
     }).join(' '));
 
-    const response = await prompts({
+    const response: { userMessage: string } = await prompts({
         type: 'text',
         name: 'userMessage',
         message: 'Enter your response:',
