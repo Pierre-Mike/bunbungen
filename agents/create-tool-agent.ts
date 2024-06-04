@@ -1,7 +1,11 @@
 import { createToolFn } from '../tools/create-tool/create-tool';
 import prompts from 'prompts';
+import fs from 'fs/promises';
 
 async function createToolAgent() {
+    const promptContent = await fs.readFile('prompts/create-tool-prompt.txt', 'utf8');
+    console.log(promptContent);
+
     const response = await prompts([
         {
             type: 'text',
