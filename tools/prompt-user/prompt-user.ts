@@ -6,6 +6,8 @@ const paramsSchema = z.object({
     message: z.string({
         description: "The question to the user",
     }),
+    type: z.enum(["text", "select"]).default("text"),
+    choices: z.array(z.string()).optional(),
 });
 
 
