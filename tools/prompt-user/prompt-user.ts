@@ -8,7 +8,6 @@ const paramsSchema = z.object({
     }),
 });
 
-import prompts from 'prompts';
 
 export async function promptUserFn(param: z.infer<typeof paramsSchema>) {
     const response = await prompts({
