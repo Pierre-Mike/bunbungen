@@ -1,5 +1,7 @@
 import { calculator } from './calculator/calculator.ts';
 import { promptUser } from './prompt-user/prompt-user.ts';
+import { newTool } from './new-tool/new-tool.ts';
+import { writeTsFile } from './write-ts-file/write-ts-file.ts';
 import type { RunnableToolFunctionWithParse } from 'openai/lib/RunnableFunction.mjs';
 
 const tools = new Map<string | undefined, (...args: any[]) => any>();
@@ -10,5 +12,7 @@ const registerTool = (tool: RunnableToolFunctionWithParse<any>): void => {
 
 registerTool(calculator);
 registerTool(promptUser);
+registerTool(newTool);
+registerTool(writeTsFile);
 
 export default tools;
