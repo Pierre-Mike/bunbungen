@@ -3,6 +3,7 @@ import tools from "../tools";
 import { calculator } from "../tools/calculator/calculator.ts";
 import { openai } from "../index.ts";
 import { waitUntil, waitWhileIn } from "../utils/utils.ts";
+import prompts from 'prompts';
 
 export const assistantParams = {
     name: 'instructionMaker ',
@@ -13,11 +14,18 @@ export const assistantParams = {
 
 const assistant = await openai.beta.assistants.create(assistantParams as any);
 
-let assistantStream = openai.beta.threads.createAndRunStream({
-    thread: { messages: [{ 'role': 'user', content: 'calculate 19*56*1000*2*5000*45/45*0.78' }] },
-    assistant_id: assistant.id,
-    stream: true,
-});
+async function createAndRunAssistantStream(userMessage) {
+    let assistantStream = openai.beta.threads.createAndRunStream({
+        thread: { messages: [{ 'role': 'user', content: userMessage }] },
+        assistant_id: assistant.id,
+        stream: true,
+    });
+
+    assistantStream
+        .on('toolCallDone', handleToolCallDone)
+        .on('event', handleEvent)
+        .on('end', async () => await handleEnd(assistantStream));
+}
 
 async function handleToolCallDone() {
     let run = await waitUntil(['requires_action'], assistantStream.currentRun());
@@ -54,7 +62,7 @@ function handleEvent({ event, data }) {
     console.log('run status: ', run?.status);
 }
 
-async function handleEnd() {
+async function handleEnd(assistantStream) {
     console.log('end');
     let run = await waitWhileIn(['requires_action'], assistantStream.currentRun());
     run = await waitUntil(['completed'], run);
@@ -64,9 +72,16 @@ async function handleEnd() {
         if (e.type === 'text') return e.text.value;
         if (e.type === 'image_file') return e.image_file.file_id;
     }).join(' '));
+
+    const response = await prompts({
+        type: 'text',
+        name: 'userMessage',
+        message: 'Enter your response:',
+    });
+
+    if (response.userMessage) {
+        await createAndRunAssistantStream(response.userMessage);
+    }
 }
 
-assistantStream
-    .on('toolCallDone', handleToolCallDone)
-    .on('event', handleEvent)
-    .on('end', handleEnd);
+await createAndRunAssistantStream('calculate 19*56*1000*2*5000*45/45*0.78');
