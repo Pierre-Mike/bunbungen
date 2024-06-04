@@ -1,0 +1,15 @@
+# Example of a tool
+
+Here is an example of a tool that calculates the factorial of a number:
+
+```typescript
+export function factorial(n: number): number {
+    if (n === 0) {
+        return 1;
+    } else {
+        return n * factorial(n - 1);
+    }
+}
+```
+
+This tool can be used to calculate the factorial of any non-negative integer.
