@@ -8,12 +8,17 @@ const paramsSchema = z.object({
     }),
 });
 
+import prompts from 'prompts';
+
 export async function promptUserFn(param: z.infer<typeof paramsSchema>) {
-    return await prompts({
+    const response = await prompts({
         type: 'text',
         name: 'message',
         message: param.message,
-    })
+        validate: value => value ? true : 'This field is required'
+    });
+
+    return response.message;
 }
 
 export const promptUser  = zodFunction<any>({
