@@ -16,7 +16,7 @@ export async function promptUserFn(param: z.infer<typeof paramsSchema>) {
         type: param.type,
         name: 'response',
         message: param.message,
-        validate: value => value ? true : 'This field is required'
+        validate: (value: any) => value ? true : 'This field is required'
     };
 
     if (param.type === "select" && param.choices) {

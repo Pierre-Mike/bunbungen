@@ -9,7 +9,7 @@ export function zodFunction<T extends object>({
                                          schema,
                                          description = '',
                                        }: {
-  function: (args: T) => Promise<object>;
+  function: (args: T) => Promise<any>;
   schema: ZodSchema<T>;
   description?: string;
 }): RunnableToolFunctionWithParse<T> {

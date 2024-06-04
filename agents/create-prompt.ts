@@ -21,9 +21,8 @@ async function createAndRunAssistantStream(userMessage: string): Promise<void> {
         assistant_id: assistant.id,
         stream: true,
     });
-
     assistantStream
-        .on('toolCallDone', ()=>handleToolCallDone(assistantStream))
+        .on('toolCallDone', () => handleToolCallDone(assistantStream))
         .on('event', handleEvent)
         .on('end', async () => await handleEnd(assistantStream));
 }
@@ -57,14 +56,13 @@ async function handleToolCallDone(assistantStream: AssistantStream): Promise<voi
     });
 }
 
-function handleEvent({ event, data }: { event: any; data: any }): void {
+function handleEvent({event, data}: { event: any; data: any }): void {
     console.log('event:', JSON.stringify(event));
 }
 
 async function handleEnd(assistantStream: AssistantStream): Promise<void> {
     console.log('end');
-    let run = await waitWhileIn(['requires_action'], assistantStream.currentRun());
-    run = await waitUntil(['completed'], run);
+    let run = await waitUntil(['completed'], assistantStream.currentRun());
     const messages: { data: Message[] } = await openai.beta.threads.messages.list(run.thread_id);
     const lastMessage = messages.data[0];
     console.log('lastMessage:', lastMessage.content.map(e => {
