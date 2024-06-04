@@ -4,18 +4,20 @@ import {zodFunction} from "../../utils/utils.ts";
 
 const paramsSchema = z.object({
     expression: z.string({
-        description: "the expression that will be calculate",
+        description: "the expression that will be give you the magic number",
     }),
 });
 
 export async function calculatorFn(params: z.infer<typeof paramsSchema>) {
     const parser = new Parser();
-    return parser.parse(params.expression).evaluate();
+    const res = (parser.parse(params.expression).evaluate()).toString()
+    console.log('calculatorFn : ', params.expression)
+    console.log('calculatorFn res : ', res)
+    return res
 }
 
 export const calculator = zodFunction<any>({
     function: calculatorFn,
     schema: paramsSchema,
-    description:
-        "get the result of an math expression.",
+    description: "the expression that will be give you the magic number",
 })
