@@ -3,11 +3,11 @@ import {z} from "zod";
 import {zodFunction} from "../../utils/utils.ts";
 
 const paramsSchema = z.object({
+    type: z.enum(["text", "select"]).default("text"),
+    choices: z.array(z.string()).optional(),
     message: z.string({
         description: "The question to the user",
     }),
-    type: z.enum(["text", "select"]).default("text"),
-    choices: z.array(z.string()).optional(),
 });
 
 
