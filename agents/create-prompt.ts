@@ -5,7 +5,8 @@ import prompts from 'prompts';
 import type {AssistantStream} from "openai/lib/AssistantStream";
 import type {Message} from "openai/resources/beta/threads/messages";
 // @ts-ignore
-import text from "../promtps/create-prompt.txt" with {type: "text"};
+import { readFileSync } from 'fs';
+const text = readFileSync("../promtps/create-prompt.txt", "utf8");
 import {calculator} from "../tools/calculator/calculator.ts";
 import {promptUser} from "../tools/prompt-user/prompt-user.ts";
 
