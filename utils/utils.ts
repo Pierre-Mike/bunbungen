@@ -4,6 +4,7 @@ import type { ZodSchema } from "zod";
 import zodToJsonSchema from "zod-to-json-schema";
 import type { Run, RunStatus } from "openai/resources/beta/threads/runs/runs";
 import { openai } from "../index.ts";
+import type {FunctionTool} from "openai/resources/beta/assistants";
 export function zodFunction<T extends object>({
   function: fn,
   schema,
@@ -12,7 +13,7 @@ export function zodFunction<T extends object>({
   function: (args: T) => Promise<any>;
   schema: ZodSchema<T>;
   description?: string;
-}): RunnableToolFunctionWithParse<T> {
+}): FunctionTool | RunnableToolFunctionWithParse<T> {
   return {
     type: "function",
     function: {
@@ -27,19 +28,6 @@ export function zodFunction<T extends object>({
     },
   };
 }
-
-export const waitWhileIn = async (
-  status: RunStatus[],
-  run: Run | undefined
-) => {
-  if (!run) throw new Error("run not found");
-  while (status.includes(run.status)) {
-    console.log("waiting for :", status);
-    console.log("current for", run.status);
-    run = await openai.beta.threads.runs.retrieve(run.thread_id, run.id);
-  }
-  return run;
-};
 
 export const waitUntil = async (status: RunStatus[], run: Run | undefined) => {
   if (!run) throw new Error("run not found");
