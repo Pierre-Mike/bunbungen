@@ -47,12 +47,17 @@ async function handleToolCallDone(assistantStream: AssistantStream): Promise<voi
 
     const allResult = await Promise.all(functionCalled.map(async (e) => {
         const functionDefinition = tools.get(e.name);
-        if (!functionDefinition) return {
-            output: `Function "${e.name}" not found. Try again.`,
-            tool_call_id: e.toolId
-        };
-        console.log('calling function : ', functionDefinition, ' with params : ', e.arguments);
-        const output = JSON.stringify(await functionDefinition(e.arguments));
+        let output;
+        if (!functionDefinition) {
+            output = `Function "${e.name}" not found. Try again.`;
+        } else {
+            console.log('calling function : ', functionDefinition, ' with params : ', e.arguments);
+            try {
+                output = JSON.stringify(await functionDefinition(e.arguments));
+            } catch (error) {
+                output = `Error calling function "${e.name}": ${error.message}`;
+            }
+        }
         return {
             output,
             tool_call_id: e.toolId
