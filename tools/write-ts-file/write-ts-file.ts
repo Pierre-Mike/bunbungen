@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { zodFunction } from "../../utils/utils.ts";
 import * as fs from "fs/promises";
+import {registerTool} from "../index.ts";
 
 const writeTsFileParamsSchema = z.object({
     filePath: z.string({
@@ -17,8 +18,9 @@ export async function writeTsFileFn(params: z.infer<typeof writeTsFileParamsSche
     return `File written to ${params.filePath}`;
 }
 
-export const writeTsFile = zodFunction<any>({
+export default zodFunction<any>({
     function: writeTsFileFn,
     schema: writeTsFileParamsSchema,
     description: "Writes content to a TypeScript file",
 });
+

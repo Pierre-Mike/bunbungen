@@ -1,19 +1,18 @@
-import {openai} from "../index.ts";
 import type {AssistantCreateParams} from "openai/resources/beta/assistants";
 
-// @ts-ignore
+const openai = new OpenAI()
 import {createAndRunAssistantStream} from "../utils/conversation.ts";
-import {dalleEdit} from "../tools/dalle-edit/dalle-edit.ts";
-import type {AssistantTool} from "openai/resources/beta/assistants";
-import {transformTOFunctionTool} from "../utils/utils.ts";
+import {transformToFunctionTool} from "../utils/utils.ts";
+import OpenAI from "openai";
+import {tools} from "../tools";
 
-export const assistantParams = {
+export const assistantParams: AssistantCreateParams = {
     name: 'dalles-edit-image ',
-    model: 'gpt-4o-2024-05-13',
-    instructions: 'You are here to just provide help yo use the tools you have communicate to the user for feedback and clarification after every major step to ensure alignment.',
-    tools: [transformTOFunctionTool(dalleEdit)],
-
-} as AssistantCreateParams
+    model: 'gpt-3.5-turbo',
+    instructions: 'You are here to just provide help yo use the mapTools you have communicate to the user for feedback and clarification after every major step to ensure alignment.',
+    description: '',
+    tools: [transformToFunctionTool(tools.DalleEdit)],
+}
 
 const assistant = await openai.beta.assistants.create(assistantParams as any);
 

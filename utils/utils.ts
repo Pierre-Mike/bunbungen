@@ -19,6 +19,7 @@ export function zodFunction<T extends object>({
     schema: ZodSchema<T>;
     description?: string;
 }): RunnableToolFunctionWithParse<T> {
+
     return {
         type: "function",
         function: {
@@ -34,7 +35,7 @@ export function zodFunction<T extends object>({
     };
 }
 
-export const transformTOFunctionTool = (params: RunnableToolFunctionWithParse<object>): FunctionTool => {
+export const transformToFunctionTool = (params: RunnableToolFunctionWithParse<object>): FunctionTool => {
     return {
         type: "function",
         function: {
@@ -43,8 +44,9 @@ export const transformTOFunctionTool = (params: RunnableToolFunctionWithParse<ob
             parameters: params.function.parameters as FunctionParameters,
         },
     };
-
 }
+
+export const transformAll = (list : RunnableToolFunctionWithParse<object>[]) => list.map(transformToFunctionTool);
 
 export const waitUntil = async (status: RunStatus[], run: Run | undefined) => {
     if (!run) throw new Error("run not found");

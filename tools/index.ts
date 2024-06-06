@@ -1,19 +1,16 @@
-import { calculator } from "./calculator/calculator.ts";
-import { promptUser } from "./prompt-user/prompt-user.ts";
-import { writeTsFile } from "./write-ts-file/write-ts-file.ts";
-import type { RunnableToolFunctionWithParse } from "openai/lib/RunnableFunction.mjs";
-import type {FunctionTool} from "openai/resources/beta/assistants";
-import {dalleEdit} from "./dalle-edit/dalle-edit.ts";
+import type {RunnableToolFunctionWithParse} from "openai/lib/RunnableFunction.mjs";
+import Calculator from './calculator/calculator';
+import DalleEdit from './dalle-edit/dalle-edit';
+import promptUser from './prompt-user/prompt-user';
+import writeTsFile from './write-ts-file/write-ts-file';
 
-const tools = new Map<string | undefined, RunnableToolFunctionWithParse<any>>();
+export const tools = {Calculator, DalleEdit, promptUser, writeTsFile};
 
-const registerTool = (tool: RunnableToolFunctionWithParse<any> ): void => {
-  tools.set(tool.function.name, tool);
+export const mapTools = new Map<string | undefined, RunnableToolFunctionWithParse<any>>();
+
+export const registerTool = (tool: RunnableToolFunctionWithParse<any>): void => {
+    mapTools.set(tool.function.name, tool);
 };
 
-registerTool(calculator);
-registerTool(promptUser);
-registerTool(writeTsFile);
-registerTool(dalleEdit);
+Object.values(tools).forEach(registerTool);
 
-export default tools;

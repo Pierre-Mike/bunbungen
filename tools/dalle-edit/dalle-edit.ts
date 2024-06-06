@@ -3,7 +3,7 @@ import {zodFunction} from "../../utils/utils.ts";
 import fs from "fs";
 import OpenAI from "openai";
 
-export const openai = new OpenAI()
+const openai = new OpenAI()
 
 const paramsSchema = z.object({
     image: z.string({
@@ -43,8 +43,10 @@ export async function dalleEditFn(params: z.infer<typeof paramsSchema>) {
     return editedImages;
 }
 
-export const dalleEdit = zodFunction<any>({
+export default zodFunction<any>({
     function: dalleEditFn,
     schema: paramsSchema,
     description: "Edit an image using DALL-E based on a given prompt and a mask.",
 });
+
+

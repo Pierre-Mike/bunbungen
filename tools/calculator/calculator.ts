@@ -16,8 +16,9 @@ export async function calculatorFn(params: z.infer<typeof paramsSchema>) {
     return res
 }
 
-export const calculator = zodFunction<any>({
+export default zodFunction<any>({
     function: calculatorFn,
     schema: paramsSchema,
     description: "the expression that will be give you the magic number",
 })
+

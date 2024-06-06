@@ -1,10 +1,10 @@
-import {openai} from "../index.ts";
 import type {AssistantStream} from "openai/lib/AssistantStream";
 import {waitUntil} from "./utils.ts";
-import tools from "../tools";
+import {mapTools} from "../tools";
 import type {Message} from "openai/resources/beta/threads/messages";
 import prompts from "prompts";
 import OpenAI from "openai";
+
 const openai = new OpenAI()
 
 
@@ -52,7 +52,7 @@ async function handleToolCallDone(assistantStream: AssistantStream): Promise<voi
     const allResult = await Promise.all(functionCalled.map(async (e) => {
         console.log(functionCalled)
 
-        const functionDefinition = tools.get(e.name)
+        const functionDefinition =mapTools.get(e.name);
         let output;
         if (!functionDefinition) {
             console.error('Function not found : ', e.name)

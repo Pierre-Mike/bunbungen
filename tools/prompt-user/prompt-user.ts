@@ -36,8 +36,9 @@ export async function promptUserFn(param: z.input<typeof paramsSchema>) {
   return response.response;
 }
 
-export const promptUser = zodFunction<any>({
+export default zodFunction<any>({
   function: promptUserFn,
   schema: paramsSchema,
   description: "ask the user any question to help you be accurate",
 });
+
