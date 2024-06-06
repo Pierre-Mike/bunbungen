@@ -4,48 +4,69 @@ import {waitUntil} from "./utils.ts";
 import tools from "../tools";
 import type {Message} from "openai/resources/beta/threads/messages";
 import prompts from "prompts";
+import OpenAI from "openai";
+const openai = new OpenAI()
 
 
-export async function createAndRunAssistantStream(assistant_id: string, userMessage: string): Promise<void> {
+export async function createAndRunAssistantStream(assistantId: string, userMessage: string, threadId?: string): Promise<void> {
+    let assistantStream: AssistantStream | undefined = undefined
 
 
-    let assistantStream = openai.beta.threads.createAndRunStream({
-        assistant_id,
-        thread: {messages: [{'role': 'user', content: userMessage}]},
-        stream: true,
-    });
+    if (threadId) {
+        // add message from user to thread
+        await openai.beta.threads.messages.create(threadId, {'role': 'user', content: userMessage})
+        assistantStream = openai.beta.threads.runs.stream(threadId, {
+            stream: true,
+            assistant_id: assistantId
+        })
+    } else {
+        assistantStream = openai.beta.threads.createAndRunStream({
+            assistant_id: assistantId,
+            thread: {messages: [{'role': 'user', content: userMessage}]},
+            stream: true,
+        });
+    }
 
     assistantStream
         .on('toolCallDone', () => handleToolCallDone(assistantStream))
         .on('event', handleEvent)
-        .on('end', async () => await handleEnd(assistant_id, assistantStream));
+        .on('end', async () => await handleEnd(assistantStream));
 }
 
 async function handleToolCallDone(assistantStream: AssistantStream): Promise<void> {
+    console.log('toolCallDone');
     let run = await waitUntil(['requires_action'], assistantStream.currentRun());
 
     const functionCalled = run?.required_action?.submit_tool_outputs.tool_calls
         .filter(e => e.type === 'function')
         .map(e => ({name: e.function.name, arguments: e.function.arguments, toolId: e.id}));
+
+
     if (!functionCalled) {
         console.error('#ERROR_MISSING_FUNCTION_CALL : ', functionCalled);
         console.error('#ERROR_MISSING_FUNCTION_CALL + : ', run);
         return;
     }
 
+
     const allResult = await Promise.all(functionCalled.map(async (e) => {
+        console.log(functionCalled)
+
         const functionDefinition = tools.get(e.name)
         let output;
         if (!functionDefinition) {
+            console.error('Function not found : ', e.name)
             output = `Function "${e.name}" not found. Try again.`;
         } else {
-            console.log('calling function : ', functionDefinition.function.function.name, ' with params : ', e.arguments);
+            console.log('calling function : ', functionDefinition.function?.function.name, ' with params : ', e.arguments);
             // vaidatate params
             const params = functionDefinition.function.parse(e.arguments);
-            try{
+            try {
+                // @ts-ignore
                 output = JSON.stringify(await functionDefinition.function.function(params))
 
-            } catch(err:any){
+            } catch (err: any) {
+                console.error(err);
                 output = `Error calling function "${e.name}": ${err.message}`;
             }
         }
@@ -63,7 +84,7 @@ function handleEvent({event, data}: { event: any; data: any }): void {
     console.log('event:', JSON.stringify(event));
 }
 
-async function handleEnd(assistant_id: string, assistantStream: AssistantStream): Promise<void> {
+async function handleEnd(assistantStream: AssistantStream): Promise<void> {
     console.log('end');
     let run = await waitUntil(['completed'], assistantStream.currentRun());
     const messages: { data: Message[] } = await openai.beta.threads.messages.list(run.thread_id);
@@ -80,6 +101,6 @@ async function handleEnd(assistant_id: string, assistantStream: AssistantStream)
     });
 
     if (response.userMessage) {
-        await createAndRunAssistantStream(assistant_id, response.userMessage);
+        await createAndRunAssistantStream(run.assistant_id, response.userMessage, run.thread_id);
     }
 }
