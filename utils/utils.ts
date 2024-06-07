@@ -6,7 +6,6 @@ import type {Run, RunStatus} from "openai/resources/beta/threads/runs/runs";
 import type {FunctionTool} from "openai/resources/beta/assistants";
 import type {FunctionParameters} from "openai/resources/shared.mjs";
 import OpenAI from "openai";
-
 export const openai = new OpenAI()
 
 
@@ -58,3 +57,4 @@ export const waitUntil = async (status: RunStatus[], run: Run | undefined) => {
     }
     return run;
 };
+

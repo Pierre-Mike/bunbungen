@@ -43,7 +43,7 @@ export async function dalleEditFn(params: z.infer<typeof paramsSchema>) {
     return editedImages;
 }
 
-export default zodFunction<any>({
+export const dalleEdit = zodFunction<any>({
     function: dalleEditFn,
     schema: paramsSchema,
     description: "Edit an image using DALL-E based on a given prompt and a mask.",

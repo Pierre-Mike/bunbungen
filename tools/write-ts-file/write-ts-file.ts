@@ -1,7 +1,6 @@
 import { z } from "zod";
 import { zodFunction } from "../../utils/utils.ts";
 import * as fs from "fs/promises";
-import {registerTool} from "../index.ts";
 
 const writeTsFileParamsSchema = z.object({
     filePath: z.string({

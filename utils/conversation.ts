@@ -1,12 +1,11 @@
 import type {AssistantStream} from "openai/lib/AssistantStream";
-import {waitUntil} from "./utils.ts";
-import {mapTools} from "../tools";
+import { waitUntil} from "./utils.ts";
 import type {Message} from "openai/resources/beta/threads/messages";
 import prompts from "prompts";
 import OpenAI from "openai";
+import {mapTools} from "./mapTools.ts";
 
 const openai = new OpenAI()
-
 
 export async function createAndRunAssistantStream(assistantId: string, userMessage: string, threadId?: string): Promise<void> {
     let assistantStream: AssistantStream | undefined = undefined
