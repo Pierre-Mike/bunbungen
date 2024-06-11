@@ -4,16 +4,16 @@ const openai = new OpenAI()
 import {createAndRunAssistantStream} from "../utils/conversation.ts";
 import {transformToFunctionTool} from "../utils/utils.ts";
 import OpenAI from "openai";
-import {tools} from "../tools";
+import * as tools from "../tools";
 
 export const assistantParams: AssistantCreateParams = {
     name: 'dalles-edit-image ',
     model: 'gpt-3.5-turbo',
     instructions: 'You are here to just provide help yo use the mapTools you have communicate to the user for feedback and clarification after every major step to ensure alignment.',
     description: '',
-    tools: [transformToFunctionTool(tools.DalleEdit)],
+    tools: [transformToFunctionTool(tools.dalleEdit)],
 }
 
 const assistant = await openai.beta.assistants.create(assistantParams as any);
 
-await createAndRunAssistantStream(assistant.id, 'use dalleEdit tool ');
+await createAndRunAssistantStream({assistantId: assistant.id, userMessage: 'use dalleEdit tool '});

@@ -1,5 +1,5 @@
 import type {AssistantStream} from "openai/lib/AssistantStream";
-import { waitUntil} from "./utils.ts";
+import {waitUntil} from "./utils.ts";
 import type {Message} from "openai/resources/beta/threads/messages";
 import prompts from "prompts";
 import OpenAI from "openai";
@@ -7,7 +7,11 @@ import {mapTools} from "./mapTools.ts";
 
 const openai = new OpenAI()
 
-export async function createAndRunAssistantStream(assistantId: string, userMessage: string, threadId?: string): Promise<void> {
+export type AssistantParams = { assistantId: string, userMessage: string, threadId?: string }
+
+export async function createAndRunAssistantStream({
+                                                      assistantId, userMessage, threadId
+                                                  }: AssistantParams): Promise<void> {
     let assistantStream: AssistantStream | undefined = undefined
 
 
@@ -51,7 +55,7 @@ async function handleToolCallDone(assistantStream: AssistantStream): Promise<voi
     const allResult = await Promise.all(functionCalled.map(async (e) => {
         console.log(functionCalled)
 
-        const functionDefinition =mapTools.get(e.name);
+        const functionDefinition = mapTools.get(e.name);
         let output;
         if (!functionDefinition) {
             console.error('Function not found : ', e.name)
@@ -100,6 +104,10 @@ async function handleEnd(assistantStream: AssistantStream): Promise<void> {
     });
 
     if (response.userMessage) {
-        await createAndRunAssistantStream(run.assistant_id, response.userMessage, run.thread_id);
+        await createAndRunAssistantStream({
+            assistantId: run.assistant_id,
+            userMessage: response.userMessage,
+            threadId: run.thread_id
+        });
     }
 }

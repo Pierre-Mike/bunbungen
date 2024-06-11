@@ -7,11 +7,11 @@ import OpenAI from "openai";
 import * as tools from '../tools'
 
 export const assistantParams: AssistantCreateParams = {
-    name: 'calculator',
-    model: 'gpt-3.5-turbo',
-    instructions: 'You are here to just provide help yo use the mapTools you have communicate to the user for feedback and clarification after every major step to ensure alignment.',
+    name: 'talking',
+    model: 'gpt-4o',
+    instructions: 'you are here to help the user be smarter over time, answer question and bringing the conversation to an hight level. keep in mind english isn\' the first language of the user you have communicate to the user for feedback and clarification after every major step to ensure alignment.',
     description: 'This assistant helps you use the calculator tool.',
-    tools: transformAll([tools.calculator]),
+    // tools: ),
 }
 
 const assistant = await openai.beta.assistants.create(assistantParams as any);
