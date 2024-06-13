@@ -4,16 +4,17 @@ import type {Message} from "openai/resources/beta/threads/messages";
 import prompts from "prompts";
 import OpenAI from "openai";
 import {mapTools} from "./mapTools.ts";
+import fs from "fs";
+import player from "play-sound";
 
 const openai = new OpenAI()
 
-export type AssistantParams = { assistantId: string, userMessage: string, threadId?: string }
+export type AssistantParams = { assistantId: string, userMessage: string, threadId?: string, audio?: boolean }
 
 export async function createAndRunAssistantStream({
-                                                      assistantId, userMessage, threadId
+                                                      assistantId, userMessage, threadId, audio = false
                                                   }: AssistantParams): Promise<void> {
     let assistantStream: AssistantStream | undefined = undefined
-
 
     if (threadId) {
         // add message from user to thread
@@ -33,7 +34,7 @@ export async function createAndRunAssistantStream({
     assistantStream
         .on('toolCallDone', () => handleToolCallDone(assistantStream))
         .on('event', handleEvent)
-        .on('end', async () => await handleEnd(assistantStream));
+        .on('end', async () => await handleEnd(assistantStream, audio));
 }
 
 async function handleToolCallDone(assistantStream: AssistantStream): Promise<void> {
@@ -87,27 +88,53 @@ function handleEvent({event, data}: { event: any; data: any }): void {
     console.log('event:', JSON.stringify(event));
 }
 
-async function handleEnd(assistantStream: AssistantStream): Promise<void> {
+
+async function handleEnd(assistantStream: AssistantStream, audio: boolean): Promise<void> {
     console.log('end');
     let run = await waitUntil(['completed'], assistantStream.currentRun());
     const messages: { data: Message[] } = await openai.beta.threads.messages.list(run.thread_id);
-    const lastMessage = messages.data[0];
-    console.log('lastMessage:', lastMessage.content.map(e => {
+    const lastMessages = messages.data[0];
+    const lastMessage = lastMessages.content.map(e => {
         if (e.type === 'text') return e.text.value;
-        if (e.type === 'image_file') return e.image_file.file_id;
-    }).join(' '));
+    }).join(' ')
+
+
+    if (audio) {
+        const speech = await openai.audio.speech.create({
+            voice: 'echo',
+            model: 'tts-1',
+            input: lastMessage
+        });
+        const buffer = await speech.arrayBuffer();
+        const audioPlayer = player();
+        const audioFilePath = '.response.mp3';
+        await fs.promises.writeFile(audioFilePath, Buffer.from(buffer));
+        audioPlayer.play(audioFilePath, (err: any) => {
+            if (err) console.error('Error playing audio:', err);
+        });
+    }
+
+
+    console.log('lastMessage:', lastMessage);
+
+
+    let userMessage = '';
+
 
     const response: { userMessage: string } = await prompts({
         type: 'text',
         name: 'userMessage',
         message: 'Enter your response:',
     });
+    userMessage = response.userMessage;
 
-    if (response.userMessage) {
+
+    if (userMessage) {
         await createAndRunAssistantStream({
             assistantId: run.assistant_id,
-            userMessage: response.userMessage,
-            threadId: run.thread_id
+            userMessage: userMessage,
+            threadId: run.thread_id,
+            audio
         });
     }
 }
