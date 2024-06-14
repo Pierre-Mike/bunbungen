@@ -1,5 +1,4 @@
 import { z } from "zod";
-import axios from "axios";
 import { zodFunction } from "../../utils/utils.ts";
 
 const paramsSchema = z.object({
@@ -16,13 +15,11 @@ const paramsSchema = z.object({
 
 export async function jiraUpdateFn(params: z.infer<typeof paramsSchema>) {
     const { ticketId, description, jiraBaseUrl } = params;
-    const jiraToken = process.env.JIRA_API_TOKEN
+    const jiraToken = process.env.JIRA_API_TOKEN;
     const url = `${jiraBaseUrl}/rest/api/2/issue/${ticketId}`;
-    const config = {
-        headers: {
-            "Authorization": `Basic ${Buffer.from(`:${jiraToken}`).toString("base64")}`,
-            "Content-Type": "application/json",
-        },
+    const headers = {
+        "Authorization": `Basic ${Buffer.from(`:${jiraToken}`).toString("base64")}`,
+        "Content-Type": "application/json",
     };
     const data = {
         fields: {
@@ -31,10 +28,20 @@ export async function jiraUpdateFn(params: z.infer<typeof paramsSchema>) {
     };
 
     try {
-        const response = await axios.put(url, data, config);
-        console.log('jiraUpdateFn : ', response.data);
-        return response.data;
-    } catch (error :any) {
+        const response = await fetch(url, {
+            method: 'PUT',
+            headers: headers,
+            body: JSON.stringify(data),
+        });
+
+        if (!response.ok) {
+            throw new Error(`Failed to update Jira ticket: ${response.statusText}`);
+        }
+
+        const responseData = await response.json();
+        console.log('jiraUpdateFn : ', responseData);
+        return responseData;
+    } catch (error: any) {
         console.error('jiraUpdateFn error: ', error);
         throw new Error(`Failed to update Jira ticket: ${error.message}`);
     }
