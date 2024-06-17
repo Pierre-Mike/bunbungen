@@ -7,16 +7,13 @@ const paramsSchema = z.object({
     }),
     description: z.string({
         description: "The new description for the Jira ticket",
-    }),
-    jiraBaseUrl: z.string({
-        description: "The base URL of the Jira instance",
-    }),
+    })
 });
 
 export async function jiraUpdateFn(params: z.infer<typeof paramsSchema>) {
-    const { ticketId, description, jiraBaseUrl } = params;
+    const { ticketId, description } = params;
     const jiraToken = process.env.JIRA_API_TOKEN;
-    const url = `${jiraBaseUrl}/rest/api/2/issue/${ticketId}`;
+    const url = `https://jirapge.atlassian.net/rest/api/2/issue/${ticketId}`;
     const headers = {
         "Authorization": `Basic ${Buffer.from(`:${jiraToken}`).toString("base64")}`,
         "Content-Type": "application/json",
