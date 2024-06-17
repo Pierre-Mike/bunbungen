@@ -12,7 +12,7 @@ export async function jiraReadFn(params: z.infer<typeof paramsSchema>) {
     const jiraToken = process.env.JIRA_API_TOKEN;
     const url = `https://jirapge.atlassian.net/rest/api/2/issue/${ticketId}`;
     const headers = {
-        "Authorization": `Basic ${Buffer.from(`:${jiraToken}`).toString("base64")}`,
+        "Authorization": `Basic ${Buffer.from(`p2ll@pge.com:${jiraToken}`).toString("base64")}`,
         "Content-Type": "application/json",
     };
 
