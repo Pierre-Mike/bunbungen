@@ -4,3 +4,4 @@ export * from './prompt-user/prompt-user';
 export * from './write-ts-file/write-ts-file';
 export * from './jira-update/jira-update';
 export * from './jira-read/jira-read';
+export * from './jira-create/jira-create';
