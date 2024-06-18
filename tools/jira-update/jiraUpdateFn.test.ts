@@ -1,5 +1,5 @@
-import { describe, it, expect, mock } from "bun:test";
-import { jiraUpdateFn } from "./jira-update";
+import {describe, it, expect, mock} from "bun:test";
+import {jiraUpdateFn} from "./jira-update";
 
 export const mockFetch = mock()
 global.fetch = mockFetch
@@ -19,7 +19,7 @@ describe("jiraUpdateFn", () => {
             json: async () => mockResponse,
         });
 
-        const params = { ticketId: "TEST-123", description: "Updated description" };
+        const params = {ticketId: "TEST-123", description: "Updated description"};
         const result = await jiraUpdateFn(params);
 
         expect(result).toEqual(mockResponse);
@@ -31,7 +31,7 @@ describe("jiraUpdateFn", () => {
             statusText: "Not Found",
         });
 
-        const params = { ticketId: "INVALID-123", description: "Updated description" };
+        const params = {ticketId: "INVALID-123", description: "Updated description"};
 
         await expect(jiraUpdateFn(params)).rejects.toThrow("Failed to update Jira ticket: Not Found");
     });
@@ -39,8 +39,9 @@ describe("jiraUpdateFn", () => {
     it("should throw an error if there is a network issue", async () => {
         mockFetch.mockRejectedValue(new Error("Network Error"));
 
-        const params = { ticketId: "TEST-123", description: "Updated description" };
+        const params = {ticketId: "TEST-123", description: "Updated description"};
 
         await expect(jiraUpdateFn(params)).rejects.toThrow("Failed to update Jira ticket: Network Error");
     });
 });
+

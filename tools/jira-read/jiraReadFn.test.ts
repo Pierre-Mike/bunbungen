@@ -1,8 +1,9 @@
-import { describe, it, expect, vi } from "bun:test";
+import { describe, it, expect, mock } from "bun:test";
 import { jiraReadFn } from "./jira-read";
-import fetch from "node-fetch";
 
-vi.mock("node-fetch");
+export const mockFetch = mock()
+global.fetch = mockFetch
+mock.module("node-fetch", () => mockFetch)
 
 describe("jiraReadFn", () => {
     it("should read a Jira ticket successfully", async () => {
@@ -14,7 +15,7 @@ describe("jiraReadFn", () => {
             },
         };
 
-        fetch.mockResolvedValue({
+        mockFetch.mockResolvedValue({
             ok: true,
             json: async () => mockResponse,
         });
@@ -26,7 +27,7 @@ describe("jiraReadFn", () => {
     });
 
     it("should throw an error if the Jira ticket cannot be read", async () => {
-        fetch.mockResolvedValue({
+        mockFetch.mockResolvedValue({
             ok: false,
             statusText: "Not Found",
         });
@@ -37,7 +38,7 @@ describe("jiraReadFn", () => {
     });
 
     it("should throw an error if there is a network issue", async () => {
-        fetch.mockRejectedValue(new Error("Network Error"));
+        mockFetch.mockRejectedValue(new Error("Network Error"));
 
         const params = { ticketId: "TEST-123" };
 
