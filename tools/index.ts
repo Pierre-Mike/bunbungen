@@ -1,5 +1,6 @@
 export * from './calculator/calculator';
 export * from './dalle-edit/dalle-edit';
+export * from './dalle-create/dalle-create';
 export * from './prompt-user/prompt-user';
 export * from './write-ts-file/write-ts-file';
 export * from './jira-update/jira-update';
