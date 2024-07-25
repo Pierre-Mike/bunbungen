@@ -16,4 +16,4 @@ export const assistantParams: AssistantCreateParams = {
 
 const assistant = await openai.beta.assistants.create(assistantParams as any);
 
-await createAndRunAssistantStream({assistantId: assistant.id, userMessage: 'use dalleEdit tool '});
+await createAndRunAssistantStream({assistantId: assistant.id, userMessage: 'use dalleEdit tool'});
