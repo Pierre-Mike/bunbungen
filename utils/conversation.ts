@@ -4,8 +4,7 @@ import type { Message } from "openai/resources/beta/threads/messages";
 import prompts from "prompts";
 import OpenAI from "openai";
 import { mapTools } from "./mapTools.ts";
-import fs from "fs";
-import player from "play-sound";
+const { exec } = require("child_process");
 
 const openai = new OpenAI();
 
@@ -132,17 +131,9 @@ async function handleEnd(
     .join(" ");
 
   if (audio) {
-    const speech = await openai.audio.speech.create({
-      voice: "echo",
-      model: "tts-1",
-      input: lastMessage,
-    });
-    const buffer = await speech.arrayBuffer();
-    const audioPlayer = player();
-    const audioFilePath = ".response.mp3";
-    await fs.promises.writeFile(audioFilePath, Buffer.from(buffer));
-    audioPlayer.play(audioFilePath, (err: any) => {
-      if (err) console.error("Error playing audio:", err);
+    const speechCommand = `say "${lastMessage}"`;
+    exec(speechCommand, (err: any) => {
+      if (err) console.error("Error using macOS speech:", err);
     });
   }
 

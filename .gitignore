@@ -175,3 +175,4 @@ dist
 .DS_Store
 .aider*
 /.response.mp3
+tools/dalle-create/images/*
