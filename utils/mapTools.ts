@@ -1,16 +1,14 @@
-import * as tools from '../tools'
-import type {RunnableToolFunctionWithParse} from "openai/lib/RunnableFunction.mjs";
+import * as tools from '../tools';
+import type { RunnableToolFunctionWithParse } from "openai/lib/RunnableFunction.mjs";
 
-export const mapTools = new Map<string | undefined, RunnableToolFunctionWithParse<any>>();
+export const mapTools = new Map<string, RunnableToolFunctionWithParse<any>>();
 
-export const registerTool = (tool: RunnableToolFunctionWithParse<any>): void => {
-    mapTools.set(tool.function.name, tool);
+export const registerTool = (tool: RunnableToolFunctionWithParse<object>): void => {
+    mapTools.set(tool?.function?.name, tool);
 };
 
-Object.values(tools).forEach((tool) => {
-    // @ts-ignore
+Object.values(tools).forEach((tool: any) => {
     if (tool?.type === "function") {
-        // @ts-ignore
-        registerTool(tool);
+        registerTool(tool as RunnableToolFunctionWithParse<any>);
     }
 });

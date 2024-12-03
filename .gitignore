@@ -176,3 +176,4 @@ dist
 .aider*
 /.response.mp3
 tools/dalle-create/images/*
+venv/

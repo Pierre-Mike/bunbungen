@@ -1,6 +1,6 @@
-# Project Title
+# Bunbungen
 
-Welcome to the Project Title! This project aims to [briefly describe the purpose and goals of your project]. 
+Welcome to Bunbungen! This project aims to provide a flexible agent framework using Bun runtime for efficient JavaScript execution.
 
 ## Getting Started
 
@@ -14,8 +14,8 @@ To get started, follow these steps:
    ```bash
    bun run your-agent-script.js
    ```
-f
-5. **View Results**  
+
+3. **View Results**  
    After the evaluation, you can view the results by running:
    ```bash
    promptfoo view
