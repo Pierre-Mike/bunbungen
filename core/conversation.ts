@@ -70,7 +70,7 @@ export async function createAndRunAssistantStream({
 
   assistantStream
     .on("toolCallDone", () => handleToolCallDone(assistantStream))
-    .on("event", handleEvent)
+    .on("event", ()=>debug && logEvent)
     .on("end", async () => await handleEnd(assistantStream, audio));
 }
 
@@ -137,15 +137,15 @@ async function handleToolCallDone(
   );
 }
 
-function handleEvent({ event, data }: { event: any; data: any}): void {
+function logEvent({ event, data }: { event: any; data: any}): void {
   console.log("event:", JSON.stringify(event));
+  console.log("data:", JSON.stringify(data));
 }
 
 async function handleEnd(
   assistantStream: AssistantStream,
   audio: boolean,
 ): Promise<void> {
-  console.log("end");
   let run = await waitUntil(["completed"], assistantStream.currentRun());
   const messages: { data: Message[] } = await openai.beta.threads.messages.list(
     run.thread_id,

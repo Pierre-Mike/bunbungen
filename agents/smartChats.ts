@@ -8,5 +8,5 @@ await createAndRunAssistantStream({
         description: "talk with the user trying to help him",
         customTools: [tools.listFile],
     },
-    audio:  true,
+    debug: true,
 });                              
